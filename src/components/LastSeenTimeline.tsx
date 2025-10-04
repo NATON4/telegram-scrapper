@@ -12,6 +12,7 @@ import {
     Area,
     Line,
 } from "recharts";
+import LastSeenTooltip from "./LastSeenTooltip.tsx";
 
 type LastSeenTimelineProps = {
     kyivTz: string;
@@ -38,8 +39,8 @@ export default function LastSeenTimeline({
 
     const fromTs = dayjs(rangeFromISO).valueOf();
     const toTs = dayjs(rangeToISO).valueOf();
-    const yTick = { fontSize: 12, fill: '#cfcfcf' as const }
-    const xTick = { fontSize: 12, fill: '#cfcfcf' as const };
+    const yTick = {fontSize: 12, fill: '#cfcfcf' as const}
+    const xTick = {fontSize: 12, fill: '#cfcfcf' as const};
 
     const bucket = (m: number) => (m <= 15 ? 0 : m <= 30 ? 1 : m <= 60 ? 2 : 3);
     const signed = (m: number) => (m <= 30 ? +m : -m); // 0..30 вгору, 30+ вниз
@@ -206,10 +207,10 @@ export default function LastSeenTimeline({
             >
                 <ResponsiveContainer>
                     <ComposedChart
-                        margin={{ top: 2, right: 4, bottom: 8, left: 4 }}
+                        margin={{top: 2, right: 4, bottom: 8, left: 4}}
                     >
 
-                    <CartesianGrid strokeDasharray="3 3"/>
+                        <CartesianGrid strokeDasharray="3 3"/>
                         <XAxis
                             type="number"
                             dataKey="x"
@@ -235,14 +236,9 @@ export default function LastSeenTimeline({
                         />
 
                         <Tooltip
-                            labelFormatter={(v) => dayjs(v).tz(kyivTz).format("YYYY-MM-DD HH:mm")}
-                            formatter={(val: number, _name, ctx: any) => {
-                                const mins = Math.abs(val);
-                                const last = ctx?.payload?.lastTs
-                                    ? dayjs(ctx.payload.lastTs).tz(kyivTz).format("YYYY-MM-DD HH:mm")
-                                    : "";
-                                return [`${mins} хв від ${last}`, "Давність"];
-                            }}
+                            content={<LastSeenTooltip kyivTz={kyivTz}/>}
+                            cursor={{stroke: '#ffffff25', strokeWidth: 1}}
+                            allowEscapeViewBox={{x: true, y: true}}
                         />
 
                         <ReferenceLine y={0} stroke="#ffffff30"/>
@@ -258,6 +254,7 @@ export default function LastSeenTimeline({
                             data={windowed.map(d => ({
                                 x: d.x,
                                 vSigned: d.ageMin < 30 ? d.ageMin : -d.ageMin,
+                                lastTs: d.lastTs,
                             }))}
                             dataKey="vSigned"
                             stroke="#9ca3af40"
