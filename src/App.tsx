@@ -115,12 +115,17 @@ export default function App() {
         return res
     }, [lastSeen])
 
-    const heatData = useMemo(() => {
-        const map = new Map<number, number>()
-        for (let i = 0; i < 24; i++) map.set(i, 0)
-        heat.forEach(h => map.set(h.hour_kyiv, h.online_points))
-        return Array.from(map.entries()).map(([hour, online_points]) => ({hour, online_points}))
-    }, [heat])
+    const lastEntryAtISO = periods.length ? periods.at(-1)!.online_from : null;
+
+    const entriesByHour = useMemo(() => {
+        const map = new Map<number, number>();
+        for (let h = 0; h < 24; h++) map.set(h, 0);
+        periods.forEach(p => {
+            const h = dayjs(p.online_from).tz(kyiv).hour();
+            map.set(h, (map.get(h) || 0) + 1);
+        });
+        return Array.from(map.entries()).map(([hour, entries]) => ({hour, entries}));
+    }, [periods]);
 
     return (
         <div className="min-h-screen p-1 lg:p-10">
@@ -153,7 +158,8 @@ export default function App() {
                 <StatusAndHeat
                     kyivTz={kyiv}
                     latest={latest}
-                    heatData={heatData}
+                    heatData={entriesByHour}
+                    lastEntryAtISO={lastEntryAtISO}
                 />
 
                 <Kpis

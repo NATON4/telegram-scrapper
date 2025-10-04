@@ -1,3 +1,4 @@
+import {useEffect, useMemo, useState} from "react";
 import dayjs from "dayjs";
 
 type KpisProps = {
@@ -13,20 +14,36 @@ export default function Kpis({
     lastSeenAgeSeries,
     observationsCount,
 }: KpisProps) {
-    const now = dayjs().tz(kyivTz);
-    const latestPoint = lastSeenAgeSeries.at(-1);
-    const minutes = latestPoint ? latestPoint.yAgeMin : null;
+    const [nowTs, setNowTs] = useState(() => dayjs().valueOf());
+    useEffect(() => {
+        const t = setInterval(() => setNowTs(dayjs().valueOf()), 30_000);
+        return () => clearInterval(t);
+    }, []);
+
+    const lastSeenTs: number | null = useMemo(() => {
+        if (latestLastSeenISO) return dayjs(latestLastSeenISO).valueOf();
+        const tail = lastSeenAgeSeries.at(-1);
+        return tail ? tail.lastTs : null;
+    }, [latestLastSeenISO, lastSeenAgeSeries]);
+
+    const nowKyiv = dayjs(nowTs).tz(kyivTz);
+
+    const minutesSinceLastSeen: number | null = useMemo(() => {
+        if (lastSeenTs == null) return null;
+        const diffMin = Math.max(0, Math.floor((nowTs - lastSeenTs) / 60_000));
+        return diffMin;
+    }, [nowTs, lastSeenTs]);
 
     const lastSeenHuman =
-        latestLastSeenISO
-            ? dayjs(latestLastSeenISO).tz(kyivTz).format("YYYY-MM-DD HH:mm")
+        lastSeenTs != null
+            ? dayjs(lastSeenTs).tz(kyivTz).format("YYYY-MM-DD HH:mm")
             : "—";
 
     return (
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-2xl border border-white/10 p-3">
                 <div className="text-xs text-neutral-400">Зараз</div>
-                <div className="text-lg">{now.format("HH:mm")}</div>
+                <div className="text-lg">{nowKyiv.format("HH:mm")}</div>
             </div>
 
             <div className="rounded-2xl border border-white/10 p-3">
@@ -36,7 +53,9 @@ export default function Kpis({
 
             <div className="rounded-2xl border border-white/10 p-3">
                 <div className="text-xs text-neutral-400">Минуло від останньої появи</div>
-                <div className="text-lg">{minutes != null ? `${minutes} хв` : "—"}</div>
+                <div className="text-lg">
+                    {minutesSinceLastSeen != null ? `${minutesSinceLastSeen} хв` : "—"}
+                </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 p-3">
