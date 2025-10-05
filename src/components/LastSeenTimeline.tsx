@@ -16,23 +16,20 @@ import LastSeenTooltip from "./LastSeenTooltip.tsx";
 
 type LastSeenTimelineProps = {
     kyivTz: string;
-    /** ISO UTC */
     rangeFromISO: string;
-    /** ISO UTC */
     rangeToISO: string;
-    /** ступінчата серія last seen: { x=captured_ms, y=last_seen_ms } */
     lastSeenSeries: { x: number; y: number }[];
 };
 
 export default function LastSeenTimeline({
-                                             kyivTz,
-                                             rangeFromISO,
-                                             rangeToISO,
-                                             lastSeenSeries,
-                                         }: LastSeenTimelineProps) {
+    kyivTz,
+    rangeFromISO,
+    rangeToISO,
+    lastSeenSeries,
+}: LastSeenTimelineProps) {
     const SAMPLE_STEP_MIN = 5;
     const HYSTERESIS_MS = 90_000;
-    const JITTER_MIN = 0.5; // хв
+    const JITTER_MIN = 0.5;
 
     const [winHrs, setWinHrs] = useState<number>(6);
     const [winEnd, setWinEnd] = useState<number>(dayjs(rangeToISO).valueOf());
@@ -153,7 +150,6 @@ export default function LastSeenTimeline({
 
     return (
         <section className="rounded-2xl border border-white/10 py-4 px-2">
-            {/* range buttons */}
             <div className="flex items-center justify-between gap-3 mb-3">
                 <div className="justify-end w-full flex items-center gap-2 text-xs">
                     <span className="text-neutral-400 hidden sm:inline">Діапазон:</span>
