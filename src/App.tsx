@@ -25,6 +25,8 @@ async function getJSON<T>(url: string): Promise<T> {
 
 export default function App() {
     const [ident, setIdent] = useState(DEFAULT_IDENT)
+    const [inputIdent, setInputIdent] = useState(DEFAULT_IDENT)
+
     const [latest, setLatest] = useState<Latest | null>(null)
     const [heat, setHeat] = useState<Heat[]>([])
     const [periods, setPeriods] = useState<Period[]>([])
@@ -37,6 +39,12 @@ export default function App() {
         const from = to.subtract(7, 'day')
         return {from: from.toISOString(), to: to.toISOString()}
     }, [])
+
+    function applyIdent(next: string) {
+        const cleaned = next.trim()
+        if (!cleaned || cleaned === ident) return
+        setIdent(cleaned)
+    }
 
     useEffect(() => {
         let abort = false
@@ -90,7 +98,8 @@ export default function App() {
                 stepped.push({x, y: prevY})
                 stepped.push({x, y})
                 prevY = y
-            } else {}
+            } else {
+            }
         }
         return stepped
     }, [lastSeen])
@@ -180,15 +189,20 @@ export default function App() {
                         <input
                             className="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 outline-none"
                             placeholder="@username або 380..."
-                            // value={ident}
-                            onChange={e => setIdent(e.target.value.trim())}
+                            // value={inputIdent}
+                            onChange={(e) => setInputIdent(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    applyIdent(inputIdent)
+                                }
+                            }}
                         />
                         <button
                             className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition"
-                            onClick={() => location.reload()}
-                            title="Перезавантажити сторінку"
+                            onClick={() => applyIdent(inputIdent)}
+                            title="Застосувати і оновити дані"
                         >
-                            ⟳
+                            ↵
                         </button>
                     </div>
                 </header>
