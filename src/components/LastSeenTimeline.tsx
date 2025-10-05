@@ -154,6 +154,7 @@ export default function LastSeenTimeline({
                 <div className="justify-end w-full flex items-center gap-2 text-xs">
                     <span className="text-neutral-400 hidden sm:inline">Діапазон:</span>
                     {[
+                        {label: "2h", hrs: 2},
                         {label: "6h", hrs: 6},
                         {label: "24h", hrs: 24},
                         {label: "3d", hrs: 72},
