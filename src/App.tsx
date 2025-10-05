@@ -15,6 +15,8 @@ type Heat = { hour_kyiv: number; online_points: number }
 type Period = { online_from: string; online_to: string; duration_sec: number }
 
 const kyiv = 'Europe/Kyiv'
+const LS_KEY = 'tg-last-ident';
+
 type LastSeenPoint = { captured_at: string; last_seen_at: string }
 
 async function getJSON<T>(url: string): Promise<T> {
@@ -24,8 +26,8 @@ async function getJSON<T>(url: string): Promise<T> {
 }
 
 export default function App() {
-    const [ident, setIdent] = useState(DEFAULT_IDENT)
-    const [inputIdent, setInputIdent] = useState(DEFAULT_IDENT)
+    const [ident, setIdent] = useState(() => localStorage.getItem(LS_KEY) ?? DEFAULT_IDENT);
+    const [inputIdent, setInputIdent] = useState(() => localStorage.getItem(LS_KEY) ?? DEFAULT_IDENT);
 
     const [latest, setLatest] = useState<Latest | null>(null)
     const [heat, setHeat] = useState<Heat[]>([])
@@ -34,6 +36,17 @@ export default function App() {
     const [err, setErr] = useState<string | null>(null)
     const [lastSeen, setLastSeen] = useState<LastSeenPoint[]>([])
 
+    function normalizeIdent(s: string) {
+        const v = s.trim();
+        if (!v) return '';
+
+        return v.startsWith('@') ? '@' + v.slice(1).replace(/\s+/g, '') : v.replace(/\s+/g, '');
+    }
+
+    useEffect(() => {
+        if (ident) localStorage.setItem(LS_KEY, ident);
+    }, [ident]);
+
     const range = useMemo(() => {
         const to = dayjs().utc()
         const from = to.subtract(7, 'day')
@@ -41,9 +54,11 @@ export default function App() {
     }, [])
 
     function applyIdent(next: string) {
-        const cleaned = next.trim()
-        if (!cleaned || cleaned === ident) return
-        setIdent(cleaned)
+        const cleaned = normalizeIdent(next);
+        if (!cleaned || cleaned === ident) return;
+        setIdent(cleaned);
+        setInputIdent(cleaned);
+        localStorage.setItem(LS_KEY, cleaned);
     }
 
     useEffect(() => {
