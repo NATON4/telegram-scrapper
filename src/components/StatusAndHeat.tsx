@@ -18,24 +18,21 @@ type Latest = {
 
 type HourRow =
     | { hour: number; entries: number }
-    | { hour: number; online_points: number }; // бек-компат
+    | { hour: number; online_points: number };
 
 type StatusAndHeatProps = {
     kyivTz: string;
     latest: Latest | null;
-    /** Агрегація ВХОДІВ за годинами (0–23). */
     heatData: HourRow[];
-    /** ISO часу останнього входу (online_from), якщо хочеш показувати підпис зверху графіка. */
     lastEntryAtISO?: string | null;
 };
 
 export default function StatusAndHeat({
-                                          kyivTz,
-                                          latest,
-                                          heatData,
-                                          lastEntryAtISO,
-                                      }: StatusAndHeatProps) {
-    // 1) нормалізуємо і гарантуємо 24 бакети
+    kyivTz,
+    latest,
+    heatData,
+    lastEntryAtISO,
+}: StatusAndHeatProps) {
     const normalized = useMemo(() => {
         const base = new Map<number, number>();
         for (let h = 0; h < 24; h++) base.set(h, 0);
@@ -62,7 +59,6 @@ export default function StatusAndHeat({
 
     return (
         <section className="grid md:grid-cols-3 gap-4">
-            {/* Статус зараз */}
             <div className="rounded-2xl border border-white/10 py-4 px-2 md:col-span-1">
                 <h2 className="text-lg font-medium mb-2">Статус зараз</h2>
                 {latest ? (
@@ -89,7 +85,6 @@ export default function StatusAndHeat({
                 )}
             </div>
 
-            {/* Входи за годинами */}
             <div className="rounded-2xl border border-white/10 py-4 px-2 md:col-span-2">
                 <div className="flex items-baseline justify-between">
                     <h2 className="text-lg font-medium mb-2">Входи за годинами (Kyiv)</h2>
@@ -118,12 +113,10 @@ export default function StatusAndHeat({
                                 formatter={(val: number) => [`${val} входів`, "за годину"]}
                                 labelFormatter={(l: number) => `${l}:00`}
                             />
-                            {/* видимий колір + minPointSize щоб "тонкі" стовпчики не зникали */}
                             <Bar dataKey="entries" fill="#22c55e" radius={[6, 6, 0, 0]} minPointSize={2}/>
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-                {/* якщо за день немає входів — підпис */}
                 {normalized.every(d => d.entries === 0) && (
                     <div className="mt-2 text-xs text-neutral-500">За обраний період входів не зафіксовано.</div>
                 )}
