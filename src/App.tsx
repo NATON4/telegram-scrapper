@@ -90,8 +90,7 @@ export default function App() {
                 stepped.push({x, y: prevY})
                 stepped.push({x, y})
                 prevY = y
-            } else {
-            }
+            } else {}
         }
         return stepped
     }, [lastSeen])
@@ -115,17 +114,59 @@ export default function App() {
         return res
     }, [lastSeen])
 
-    const lastEntryAtISO = periods.length ? periods.at(-1)!.online_from : null;
+    const ENTRANCE_JUMP_MIN_MS = 4 * 60_000;
+    const ENTRANCE_YOUNG_MAX_MS = 20 * 60_000;
 
-    const entriesByHour = useMemo(() => {
-        const map = new Map<number, number>();
-        for (let h = 0; h < 24; h++) map.set(h, 0);
-        periods.forEach(p => {
-            const h = dayjs(p.online_from).tz(kyiv).hour();
-            map.set(h, (map.get(h) || 0) + 1);
-        });
-        return Array.from(map.entries()).map(([hour, entries]) => ({hour, entries}));
-    }, [periods]);
+    function computeEntriesByHourFromLastSeen(ls: LastSeenPoint[], kyivTz: string) {
+        const buckets = new Array(24).fill(0);
+
+        if (!ls || ls.length === 0) {
+            return Array.from({length: 24}, (_, h) => ({hour: h, entries: 0}));
+        }
+
+        const pts = [...ls]
+            .map(p => ({
+                captured: dayjs(p.captured_at).valueOf(),
+                last: dayjs(p.last_seen_at).valueOf(),
+            }))
+            .sort((a, b) => a.captured - b.captured);
+
+        let prev = pts[0];
+        for (let i = 1; i < pts.length; i++) {
+            const cur = pts[i];
+
+            const ageCur = Math.max(0, cur.captured - cur.last);
+            const jumpForward = cur.last - prev.last;
+
+            if (jumpForward >= ENTRANCE_JUMP_MIN_MS && ageCur <= ENTRANCE_YOUNG_MAX_MS) {
+                const hourKyiv = dayjs(cur.last).tz(kyivTz).hour();
+                buckets[hourKyiv] += 1;
+            }
+
+            prev = cur;
+        }
+
+        return buckets.map((cnt, hour) => ({hour, entries: cnt}));
+    }
+
+
+    const entriesByHour = useMemo(
+        () => computeEntriesByHourFromLastSeen(lastSeen, kyiv),
+        [lastSeen]
+    );
+
+    const lastEntryAtISO = useMemo(() => {
+        const pts = [...lastSeen]
+            .map(p => ({
+                captured: dayjs(p.captured_at).valueOf(),
+                last: dayjs(p.last_seen_at).toISOString(),
+                ageMs: Math.max(0, dayjs(p.captured_at).valueOf() - dayjs(p.last_seen_at).valueOf())
+            }))
+            .filter(p => p.ageMs <= ENTRANCE_YOUNG_MAX_MS)
+            .sort((a, b) => dayjs(a.last).valueOf() - dayjs(b.last).valueOf());
+
+        return pts.length ? pts.at(-1)!.last : null;
+    }, [lastSeen]);
 
     return (
         <div className="min-h-screen p-1 lg:p-10">
